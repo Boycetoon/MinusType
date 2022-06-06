@@ -4,8 +4,8 @@ highlighter:      rouge
 
 # Setup
 title:            MinusType
-# tagline:          'MinusType'
-description:      '减字社'
+tagline:          'MinusType'
+description:      '减字社  |  熵增时代的文字记录'
 
 baseurl:          '/'
                   # the optional subpath of your site, e.g. "/blog"

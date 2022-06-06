@@ -3,5 +3,10 @@
 # only main files contain this front matter, not partials.
 ---
 
-$large-font-size: 1.1rem;
+$large-font-size: 1.2rem;
+$sidebar-width: 20rem;
+$large-breakpoint: 90rem;
+$border-radius: 800px;
+$section-spacing: 1.5rem;
+
 @import "hydeout";

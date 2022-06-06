@@ -1,0 +1,121 @@
+I"�R<h2 id="解决步行出行研究中的距离测度问题">解决步行出行研究中的距离测度问题</h2>
+
+<p>最近出于研究的目的，需要获取一系列出行起止点间的步行网络距离，这个环节原本在研究设计的时候是预期采用GIS里的网络分析完成。但经过一番尝试后结果实在不尽如人意，很大一部分原因是没有如此完善的大规模步行网络数据，一方面道路网络的拓扑属性质量比较低，手工调整需要耗费大量时间；另一方面步行网络很多时候不仅仅基于现有的车行道，独立完成大规模步行网络的校正实在困难。</p>
+
+<p>于是我打起了百度地图提供的路径规划服务的主意，百度的步行导航相对于自己做的网络分析还是准确很多，并且通过API调用可以获得更多更丰富的数据。最终通过这一方法完成了出行距离与时间的计算。</p>
+<h2 id="一些注意事项">一些注意事项</h2>
+
+<ol>
+  <li>这里使用的服务是web端的轻量级路线规划，服务文档见：<a href="http://lbsyun.baidu.com/index.php?title=webapi/directionlite-v1">http://lbsyun.baidu.com/index.php?title=webapi/directionlite-v1</a> 返回参数其实很丰富，包括了路径的详细信息，只是由于我只需要时间和距离所以没有获取其他的数据。有需要的可以自行修改。</li>
+  <li>本服务需要的API key为服务端的key，浏览器端的不能使用。</li>
+  <li>个人开发者认证账号限额为每天3W次，并发50次。很大程度上是够用的。</li>
+  <li>串行处理相对来说有点慢，在数据量小的情况下还能接受。后面尝试更新了并行处理的方法，但是由于不是全自动的这里就不放上来了。
+    <h2 id="完整代码">完整代码</h2>
+  </li>
+</ol>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># -*- coding: utf-8 -*-
+</span><span class="s">"""
+Created on Wed May  5 10:10:31 2021
+@author: BoyceToon
+"""</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="n">pd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="n">np</span>
+<span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">from</span> <span class="nn">queue</span> <span class="kn">import</span> <span class="n">Queue</span>
+
+<span class="c1"># 以下部分需要填写
+</span><span class="n">file_path</span> <span class="o">=</span> <span class="s">""</span> <span class="c1"># 数据文件绝对路径，csv格式
+</span><span class="n">rows</span> <span class="o">=</span> <span class="mi">0</span> <span class="c1">#起始行数，默认为0
+</span><span class="n">travel_mode</span> <span class="o">=</span> <span class="s">"walking"</span> <span class="c1">#交通方式，可选：driving\riding\walking\transit
+</span><span class="n">slat_label</span> <span class="o">=</span> <span class="s">"samp_lat"</span> <span class="c1">#表格中起始点纬度的标签
+</span><span class="n">slng_label</span> <span class="o">=</span> <span class="s">"samp_lng"</span> <span class="c1">#表格中起始点经度的标签
+</span><span class="n">dlat_label</span> <span class="o">=</span> <span class="s">"lat_wgs84"</span> <span class="c1">#表格中目的地纬度的标签
+</span><span class="n">dlng_label</span> <span class="o">=</span> <span class="s">"lng_wgs84"</span> <span class="c1">#表格中目的地经度的标签
+</span><span class="n">coord_type</span> <span class="o">=</span> <span class="s">"wgs84"</span> <span class="c1">#输入坐标系，可选：wgs84\bd09ll\gcj02
+</span><span class="n">keylist</span><span class="o">=</span><span class="p">[</span><span class="s">"key1"</span><span class="p">,</span><span class="s">"key2"</span><span class="p">,</span><span class="s">"key3"</span><span class="p">]</span> <span class="c1"># API Key池, 以" ", " "的形式加入可用的AK
+</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span> <span class="c1">#读取数据
+</span><span class="n">nrows</span> <span class="o">=</span> <span class="n">df</span><span class="p">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="c1">#获得行数
+</span><span class="n">qKey</span><span class="o">=</span><span class="n">Queue</span><span class="p">()</span>
+
+<span class="k">def</span> <span class="nf">stod</span><span class="p">(</span><span class="n">slat</span><span class="p">,</span><span class="n">slng</span><span class="p">,</span><span class="n">dlat</span><span class="p">,</span><span class="n">dlng</span><span class="p">):</span><span class="c1">#输入：起点纬度、起点经度、终点纬度、终点经度
+</span>  <span class="n">url</span> <span class="o">=</span><span class="s">"http://api.map.baidu.com/directionlite/v1/"</span><span class="o">+</span><span class="n">trvel_mode</span><span class="o">+</span><span class="s">"?"</span> 
+  <span class="n">ak</span> <span class="o">=</span> <span class="n">qKey</span><span class="p">.</span><span class="n">get</span><span class="p">()</span>
+  <span class="n">real_url</span> <span class="o">=</span> <span class="n">url</span> <span class="o">+</span><span class="s">"origin="</span><span class="o">+</span><span class="n">slat</span><span class="o">+</span><span class="s">","</span><span class="o">+</span><span class="n">slng</span><span class="o">+</span><span class="s">"&amp;destination="</span><span class="o">+</span><span class="n">dlat</span><span class="o">+</span><span class="s">","</span><span class="o">+</span><span class="n">dlng</span><span class="o">+</span><span class="s">"&amp;coord_type="</span><span class="o">+</span><span class="n">coord_type</span><span class="o">+</span><span class="s">"&amp;ak="</span><span class="o">+</span><span class="n">ak</span>
+  <span class="n">req</span> <span class="o">=</span> <span class="n">requests</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="n">real_url</span><span class="p">)</span>
+  <span class="n">t</span> <span class="o">=</span> <span class="n">req</span><span class="p">.</span><span class="n">text</span>
+  <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="p">.</span><span class="n">loads</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="c1">#将数据保存在数组data中
+</span>  <span class="k">try</span><span class="p">:</span><span class="c1">#防止某几条数据报错导致请求终止
+</span>      <span class="n">distance</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s">'result'</span><span class="p">][</span><span class="s">'routes'</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s">'distance'</span><span class="p">]</span>
+      <span class="n">duration</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s">'result'</span><span class="p">][</span><span class="s">"routes"</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s">"duration"</span><span class="p">]</span><span class="o">/</span><span class="mi">60</span>
+  <span class="k">except</span><span class="p">:</span>
+      <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s">'status'</span><span class="p">]</span> <span class="o">==</span> <span class="mi">240</span> <span class="ow">or</span> <span class="n">data</span><span class="p">[</span><span class="s">'status'</span><span class="p">]</span> <span class="o">==</span> <span class="mi">302</span><span class="p">:</span>
+          <span class="k">print</span><span class="p">(</span><span class="s">"API key出现错误："</span><span class="o">+</span><span class="n">ak</span><span class="p">)</span>
+          <span class="k">print</span><span class="p">(</span><span class="s">"立即重试"</span><span class="p">)</span>
+          <span class="n">req</span><span class="p">.</span><span class="n">close</span><span class="p">()</span>
+          <span class="n">drop_key</span><span class="p">(</span><span class="n">ak</span><span class="p">)</span>
+          <span class="k">return</span> <span class="n">stod</span><span class="p">(</span><span class="n">slat</span><span class="p">,</span><span class="n">slng</span><span class="p">,</span><span class="n">dlat</span><span class="p">,</span><span class="n">dlng</span><span class="p">)</span>
+      <span class="k">else</span><span class="p">:</span>
+          <span class="n">req</span><span class="p">.</span><span class="n">close</span><span class="p">()</span>
+          <span class="n">qKey</span><span class="p">.</span><span class="n">put</span><span class="p">(</span><span class="n">ak</span><span class="p">)</span>
+          <span class="k">print</span><span class="p">(</span><span class="s">"出现错误，获取失败，错误代码为："</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s">'status'</span><span class="p">]))</span>
+          <span class="k">print</span><span class="p">(</span><span class="s">"正在使用的key为："</span><span class="o">+</span><span class="n">ak</span><span class="p">)</span>
+          <span class="k">return</span> <span class="p">(</span><span class="n">np</span><span class="p">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">np</span><span class="p">.</span><span class="n">nan</span><span class="p">)</span>
+  <span class="k">else</span><span class="p">:</span>
+      <span class="n">req</span><span class="p">.</span><span class="n">close</span><span class="p">()</span>
+      <span class="n">qKey</span><span class="p">.</span><span class="n">put</span><span class="p">(</span><span class="n">ak</span><span class="p">)</span>
+      <span class="k">print</span><span class="p">(</span><span class="s">"已获取起点"</span><span class="o">+</span><span class="n">slat</span><span class="o">+</span><span class="s">","</span><span class="o">+</span><span class="n">slng</span><span class="o">+</span><span class="s">"到终点"</span><span class="o">+</span><span class="n">dlat</span><span class="o">+</span><span class="s">","</span><span class="o">+</span><span class="n">dlng</span><span class="o">+</span><span class="s">"的步行距离："</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">distance</span><span class="p">)</span><span class="o">+</span><span class="s">"与时间"</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">duration</span><span class="p">))</span>
+      <span class="k">return</span> <span class="p">(</span><span class="n">distance</span><span class="p">,</span> <span class="n">duration</span><span class="p">)</span>
+
+<span class="c1"># 设定Key池队列
+</span><span class="k">def</span> <span class="nf">set_key</span><span class="p">(</span><span class="n">keylist</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="bp">None</span><span class="p">:</span>
+  <span class="n">qKey</span><span class="p">.</span><span class="n">queue</span><span class="p">.</span><span class="n">clear</span><span class="p">()</span>
+  <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keylist</span><span class="p">:</span>
+      <span class="n">qKey</span><span class="p">.</span><span class="n">put</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+<span class="c1"># 删除当前Key
+</span><span class="k">def</span> <span class="nf">drop_key</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
+  <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">qKey</span><span class="p">.</span><span class="n">qsize</span><span class="p">()):</span>
+      <span class="n">t</span> <span class="o">=</span> <span class="n">qKey</span><span class="p">.</span><span class="n">get</span><span class="p">()</span>
+      <span class="k">if</span> <span class="n">t</span> <span class="o">!=</span> <span class="n">key</span><span class="p">:</span>
+          <span class="n">qKey</span><span class="p">.</span><span class="n">put</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+
+<span class="n">set_key</span><span class="p">(</span><span class="n">keylist</span><span class="p">)</span> 
+<span class="k">if</span> <span class="n">rows</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+  <span class="n">df</span><span class="p">[</span><span class="s">"distance"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="n">nan</span> <span class="c1">#若从0行开始则创建对应列
+</span>  <span class="n">df</span><span class="p">[</span><span class="s">"duration"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="n">nan</span>
+
+<span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">((</span><span class="n">nrows</span><span class="o">-</span><span class="n">rows</span><span class="p">)</span><span class="o">//</span><span class="mi">1000</span><span class="p">):</span>
+  <span class="k">if</span> <span class="p">((</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="mi">1000</span><span class="o">+</span><span class="n">rows</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">nrows</span><span class="p">:</span>
+      <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">rows</span><span class="o">+</span><span class="n">n</span><span class="o">*</span><span class="mi">1000</span><span class="p">,</span> <span class="n">rows</span><span class="o">+</span><span class="p">(</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="mi">1000</span><span class="p">):</span>
+          <span class="k">print</span><span class="p">(</span><span class="s">"开始获取数据，第"</span><span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">+</span><span class="s">"行"</span><span class="p">)</span>
+          <span class="n">s_lat</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">slat_label</span><span class="p">][</span><span class="n">i</span><span class="p">])</span>
+          <span class="n">s_lng</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">slng_label</span><span class="p">][</span><span class="n">i</span><span class="p">])</span>
+          <span class="n">d_lat</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">dlat_label</span><span class="p">][</span><span class="n">i</span><span class="p">])</span>
+          <span class="n">d_lng</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">dlng_label</span><span class="p">][</span><span class="n">i</span><span class="p">])</span>
+          <span class="p">(</span><span class="n">dis</span><span class="p">,</span> <span class="n">dur</span><span class="p">)</span> <span class="o">=</span> <span class="n">stod</span><span class="p">(</span><span class="n">s_lat</span><span class="p">,</span><span class="n">s_lng</span><span class="p">,</span><span class="n">d_lat</span><span class="p">,</span><span class="n">d_lng</span><span class="p">)</span>
+          <span class="n">df</span><span class="p">[</span><span class="s">"distance"</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">dis</span>
+          <span class="n">df</span><span class="p">[</span><span class="s">"duration"</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">dur</span>
+          <span class="k">print</span><span class="p">(</span><span class="s">"写入成功"</span><span class="p">)</span>
+          <span class="k">print</span><span class="p">(</span><span class="s">"-------------------------------------------------------"</span><span class="p">)</span>
+  <span class="k">else</span><span class="p">:</span>
+      <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">rows</span><span class="o">+</span><span class="n">n</span><span class="o">*</span><span class="mi">1000</span><span class="p">,</span> <span class="n">nrows</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+          <span class="k">print</span><span class="p">(</span><span class="s">"开始获取数据，第"</span><span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">+</span><span class="s">"行"</span><span class="p">)</span>
+          <span class="n">s_lat</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">slat_label</span><span class="p">][</span><span class="n">i</span><span class="p">])</span>
+          <span class="n">s_lng</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">slng_label</span><span class="p">][</span><span class="n">i</span><span class="p">])</span>
+          <span class="n">d_lat</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">dlat_label</span><span class="p">][</span><span class="n">i</span><span class="p">])</span>
+          <span class="n">d_lng</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">dlng_label</span><span class="p">][</span><span class="n">i</span><span class="p">])</span>
+          <span class="p">(</span><span class="n">dis</span><span class="p">,</span> <span class="n">dur</span><span class="p">)</span> <span class="o">=</span> <span class="n">stod</span><span class="p">(</span><span class="n">s_lat</span><span class="p">,</span><span class="n">s_lng</span><span class="p">,</span><span class="n">d_lat</span><span class="p">,</span><span class="n">d_lng</span><span class="p">)</span>
+          <span class="n">df</span><span class="p">[</span><span class="s">"distance"</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">dis</span>
+          <span class="n">df</span><span class="p">[</span><span class="s">"duration"</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">dur</span>
+          <span class="k">print</span><span class="p">(</span><span class="s">"写入成功"</span><span class="p">)</span>
+          <span class="k">print</span><span class="p">(</span><span class="s">"-------------------------------------------------------"</span><span class="p">)</span>
+  <span class="n">df</span><span class="p">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span> <span class="c1">#每1000行保存一次
+</span>  <span class="k">print</span><span class="p">(</span><span class="s">"保存成功"</span><span class="p">)</span>
+  <span class="k">print</span><span class="p">(</span><span class="s">"-------------------------------------------------------"</span><span class="p">)</span>
+  
+<span class="k">print</span><span class="p">(</span><span class="s">"数据获取完毕"</span><span class="p">)</span>
+</code></pre></div></div>
+:ET

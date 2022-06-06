@@ -1,0 +1,103 @@
+{
+  "main": {
+    "id": "214011f74e454c8c",
+    "type": "split",
+    "children": [
+      {
+        "id": "99df9eab3e535094",
+        "type": "leaf",
+        "state": {
+          "type": "markdown",
+          "state": {
+            "file": "_posts/2021-10-15-播客补完计划-2.md",
+            "mode": "source",
+            "source": false
+          }
+        }
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "2c88485cb8867999",
+    "type": "split",
+    "children": [
+      {
+        "id": "7f04b2bec65b5b07",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "538281a1f960b834",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {}
+            }
+          },
+          {
+            "id": "343d6cd1c3223e67",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "8a45a0a0ddcb214f",
+    "type": "split",
+    "children": [
+      {
+        "id": "1e7fa810f39cbde1",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "200b7cb4915ad097",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "_posts/2021-10-15-播客补完计划-2.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "active": "99df9eab3e535094",
+  "lastOpenFiles": [
+    "_posts/2021-10-15-播客补完计划-2.md",
+    "_posts/2021-10-16-对问题意识的思考.md",
+    "_posts/2020-08-11-微观社会调查数据：中国家庭追踪调查CFPS.md",
+    "_posts/2020-07-30-你需要什么样的文献检索方法.md",
+    "_posts/2021-06-07-科研中的pdp图绘制.md",
+    "_posts/2021-10-08-感知可达性（Pot et al, 2021）.md",
+    "_posts/2020-08-10-三种信息组织的结构.md",
+    "_posts/2020-08-06-城市大数据及开放数据索引.md",
+    "_posts/2020-07-30-如何跟进学术前沿.md",
+    "_posts/2021-03-27-主观幸福感.md"
+  ]
+}
