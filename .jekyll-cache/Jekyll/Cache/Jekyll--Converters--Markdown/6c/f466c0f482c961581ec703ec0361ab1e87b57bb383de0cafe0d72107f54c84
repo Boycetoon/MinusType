@@ -1,0 +1,130 @@
+I"o<p>由于个人研究需要在最近试了一下使用API获取百度地图街景图片，在此介绍一下基于我个人需求的百度街景批量获取方法，本文以Python编码作为主要方法，如果对零编码工具有需要的可以关注一下UA城市分析小组刚刚发布的街景图片获取工具。</p>
+
+<p>街景图像用作区域细粒度空间指标测度需要解决几个问题。</p>
+
+<ol>
+  <li>首先就是调用额度的限制，现在百度对于个人认证开发者每天可用的街景图像调用额度为100张，在不考虑购买额度上限（1万张600元，其实有经费的前提下可以直接考虑钞能力）的情况下动辄几千上万张的爬取数量会大大增加需要爬取的时间周期。一般可以采用的方法是使用多个可以Key。</li>
+  <li>百度地图自己的服务大都使用BD09坐标系，且现在线上的坐标转换已经不支持百度坐标系向外转，对于其他服务来说还需要做坐标纠偏就比较麻烦，所幸街景服务支持包括wgs84在内的多个坐标系，所以这个问题倒是非常容易。</li>
+  <li>街景进一步进行图像分割等处理后用作街道环境的评价指标，一般采用360度水平全景图，但有特殊需求的时候也会使用沿道路方向的视角，再加上每次调用图像大小的限制，一般的方法是对同一地点获取多个角度的图像然后拼接或者在后期计算时计算平均值。</li>
+</ol>
+
+<hr />
+
+<p>下面是具体的获取步骤：</p>
+
+<h3 id="1定位坐标点的获取">1.定位坐标点的获取</h3>
+
+<p>定位坐标点的获取需要用到wgs84坐标系的路网数据，本来最理想的是百度地图中有街景的路段数据，但是这个数据应该难以获得。所以一般可以使用OpenStreetMap等开放地图提供的路网数据，但国内很多城市路网数据不完整，则可以使用另一个替代的方法：用百度地图截获器（或者人工截取）得到的路网位图在ArcGIS中进行配准以及ArcScan矢量化转化成矢量数据。
+<img src="image/v2-abc80008594c0bcc6213b4903dde390c_720w.jpg" alt="" />
+然后需要通过路网数据获取到样本点的数据，可以在ArcGIS中使用【编辑工具】→【增密】工具在道路线要素中等距加入折点，然后使用【要素折点转点】工具将线要素的折点提取出来，如果这一步发现到路段中有很多小于采样距离的密集点，是因为原本线要素的折点过多，可以在【增密】之前使用【简化线】工具将折点简化。
+<img src="image/v2-15f0c8f37220f00a78e02b8c0befe118_720w.jpg" alt="" />
+然后打开点要素的属性表，新建两个字段命名为X和Y，浮点类型，精度为10，小数位数6。分别进行计算几何计算点的经度和纬度。
+<img src="image/v2-c60a9e4f9258f913497125020963b54e_720w.jpg" alt="" />
+最后将属性表导出，可以存成csv格式，然后在Excel中整理并转存成xlsx格式。
+<img src="image/v2-d566d809a8515c516e660adb8ed21f76_720w.jpg" alt="" />
+2.使用Python进行批量获取</p>
+
+<p>具体实现代码如下：</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># -*- coding: utf-8 -*-
+"""
+Created on Fri Nov 20 15:53:32 2020
+@author: BoyceToon
+"""
+import os
+import os.path
+import xlrd
+import requests
+import sys
+import time
+import json
+import socket
+from queue import Queue
+
+
+data = xlrd.open_workbook('.\\samplepoint.xlsx')# 样本点文件存储路径
+SamplePoint = data.sheet_by_name(u'sheet1')# 工作表名
+nrows = SamplePoint.nrows
+ncols = SamplePoint.ncols
+valueID = []
+valueLongitude = []
+valueLatitude = []
+qKey=Queue()
+# API Key池, 以" ", " "的形式加入可用的AK
+keylist=["key1", "key2", "key3"]
+
+
+# 设定Key池队列
+def set_key(keylist: list) -&gt; None:
+  qKey.queue.clear()
+  for key in keylist:
+      qKey.put(key)
+
+
+# 删除当前Key
+def drop_key(key):
+  for _ in range(qKey.qsize()):
+      t = qKey.get()
+      if t != key:
+          qKey.put(t)
+
+
+# 获取街景图片并储存
+def get_sv(valueID, valueLongitude, valueLatitude, heading):
+  tkey = qKey.get() # 获取一个Key
+  # 构造url，其中图像尺寸（最大为1024*512）、垂直视角可以自行调整
+  url = "http://api.map.baidu.com/panorama/v2?ak=" + tkey + "&amp;width=600&amp;height=480&amp;heading=" +\
+         str(heading) + "&amp;pitch=30&amp;location=" + str(valueLongitude[-1]) + "," +\
+         str(valueLatitude[-1]) +"&amp;coordtype=wgs84ll" + "&amp;fov=90"
+  # 图像存储位置
+  outname = ".\\" + str(valueID[-1]) +\
+         "_" + str(valueLongitude[-1]) + "_" + str(valueLatitude[-1]) + "_" + str(heading) + ".jpg"
+  print(outname)
+  print(url)
+  response = requests.get(url)
+  try:
+      data = json.loads(response.text)
+  except:
+      with open(outname, 'ab') as f:
+          f.write(response.content)
+          f.close
+      print("图像" + str(valueID[-1]) + "_" + str(valueLongitude[-1]) + "_" +\
+            str(valueLatitude[-1]) + "_" + str(heading) + ".jpg" +  "已储存")
+      qKey.put(tkey)
+  else:
+      if data['status'] == '601':
+          print("API Key出现错误:" + tkey)
+          drop_key(tkey)
+          get_sv(valueID, valueLongitude, valueLatitude, heading)
+      elif data['status'] == '402':
+          print("未获取到可用的街景图像")
+      else:
+          print("错误！错误代码为：" + data['status'])
+  print("---------------------------------------------")
+
+set_key(keylist)
+for i in range(nrows-1):
+  valueID.append(SamplePoint.cell(i + 1 ,0).value)
+  valueLongitude.append(SamplePoint.cell(i + 1, 1).value)
+  valueLatitude.append(SamplePoint.cell(i + 1, 2).value)
+  print(valueID[-1])
+  print(valueLongitude[-1])
+  print(valueLatitude[-1])
+  
+  # 对每个坐标点分别采集90，180，270，360度，范围为90度的图像
+  # 如果需要采集道路朝向的街景可以引入道路角度的变量
+  for heading in [90, 180, 270, 360]:
+      get_sv(valueID, valueLongitude, valueLatitude, headi
+</code></pre></div></div>
+<ul>
+  <li>
+    <h3 id="3一些需要注意的地方">3.一些需要注意的地方</h3>
+
+    <p>1.根据现在的街景服务文档，街景服务已经不接受服务端的ak，而在百度开发者平台的解释是以前的服务端ak可以使用浏览器的服务，但是新申请的ak将不再可以，所以建议大家申请浏览器端的ak，并在白名单处填写*。
+<img src="image/v2-6f60e3f8c0b0f3d9ea56c647a123da36_720w.jpg" alt="" />
+2.在需要进行大批量获取时，可以根据自己拥有的ak数量计算每日调用上限，根据这个上限把excel表格分割成多个，每天抓取其中的一个。在计算上限时建议稍留余地。</p>
+
+    <p>3.由于我们自己的路网数据并不能保证每个点都会有街景图，将报错的网页存储成图片将导致图像打不开的情况，本方法中设置了几个常见报错的处理，没有街景的位置将不会存储图像。</p>
+  </li>
+</ul>
+:ET

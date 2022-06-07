@@ -4,5 +4,8 @@
   "newFileLocation": "folder",
   "newFileFolderPath": "_posts",
   "attachmentFolderPath": "image/",
-  "promptDelete": false
+  "promptDelete": false,
+  "alwaysUpdateLinks": true,
+  "newLinkFormat": "absolute",
+  "useMarkdownLinks": true
 }

@@ -9,7 +9,7 @@
         "state": {
           "type": "markdown",
           "state": {
-            "file": "_posts/2021-10-15-播客补完计划-2.md",
+            "file": "about.md",
             "mode": "source",
             "source": false
           }
@@ -40,7 +40,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "",
+                "query": "tag:#数据分析爱好者",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": false,
@@ -49,7 +49,8 @@
               }
             }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "horizontal",
@@ -69,7 +70,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "_posts/2021-10-15-播客补完计划-2.md",
+                "file": "about.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -89,15 +90,15 @@
   },
   "active": "99df9eab3e535094",
   "lastOpenFiles": [
-    "_posts/2021-10-15-播客补完计划-2.md",
-    "_posts/2021-10-16-对问题意识的思考.md",
-    "_posts/2020-08-11-微观社会调查数据：中国家庭追踪调查CFPS.md",
+    "about.md",
     "_posts/2020-07-30-你需要什么样的文献检索方法.md",
-    "_posts/2021-06-07-科研中的pdp图绘制.md",
-    "_posts/2021-10-08-感知可达性（Pot et al, 2021）.md",
-    "_posts/2020-08-10-三种信息组织的结构.md",
-    "_posts/2020-08-06-城市大数据及开放数据索引.md",
     "_posts/2020-07-30-如何跟进学术前沿.md",
-    "_posts/2021-03-27-主观幸福感.md"
+    "_posts/2020-08-06-城市大数据及开放数据索引.md",
+    "_posts/2020-08-10-三种信息组织的结构.md",
+    "_posts/2020-08-11-微观社会调查数据：中国家庭追踪调查CFPS.md",
+    "_posts/2020-11-21-百度地图街景图像批量获取.md",
+    "_posts/2021-03-21-跨学科研究与教育.md",
+    "_posts/2021-03-21-实现文献自由，我用Zotero.md",
+    "_posts/2021-03-24-《何为良好生活》书摘.md"
   ]
 }
