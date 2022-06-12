@@ -1,0 +1,46 @@
+I"!#<h1 id="给arcgis加速">给ArcGIS加速</h1>
+<p>ArcGIS是进行地理空间分析难以绕过的一个软件，但是大多数人在学习和使用的过程中总会遇到各种各样的问题。其中慢、莫名报错是我在相当长一段时间对于这个软件的诟病。后者可以通过规范化各种操作习惯来逐步排除一些常见的报错，同时也可以结合帮助等工具理解各种参数的作用来进行合理的调节。但是慢这个问题实在是在相当长时间困扰了我。</p>
+
+<p>在较早的阶段，由于对于分析流程的不熟悉，很多分析都是在尝试和排除报错的过程中缓慢推进的，所以大多数时候并不是画在计算上。但是随着逐渐熟悉分析流程就越发觉得这个软件的操作繁琐、计算、渲染和文件输入输出都相对较慢。在接触Model Builder后这个问题在很大程度上得到了解决，特别是固定流程的分析和需要进行批处理的分析用起来比手动操作快出很多。并且在使用过程中我发现直接在Catalog中运行Model Builder要比打开ArcMap运行要快很多，这跟ArcMap需要输入输出和渲染数据有关。</p>
+
+<p>虽然Model Builder可以解决自动化分析的大多数问题，但是对于某些环境的自动化却兼容得有限。其中图层属性控制和制图就是很重要的两个部分（当然也可能是有这样的功能但我没有使用过），很多时候需要使用ArcGIS出图，如果图量很大那就会涉及到大量的重复工作。并且当我亲身体验到gis导出速度的缓慢之后，我觉得手动导出几十上百张图是人力不可为的事情。于是我使用了arcpy来解决这个问题，arcpy中提供了mapping等方法可以使用程序来控制导出。</p>
+<h1 id="批量应用符号系统">批量应用符号系统</h1>
+<p>这来源于我自己的一个实际项目。我在使用Model Builder生成了很多张栅格数据（tif)之后，将它们全部导入ArcMap之中，全部的栅格都以默认的拉伸形式进行表达。由于这些数据实际上是一天内不同时间的数据，我希望最终能在横向上具有可对比性，所以最终采用的分级符号需要所有的图层按统一标准进行分级。首先需要找到值域范围最大的一张图，设置这张图的符号系统作为标准。
+<img src="https://github.com/Boycetoon/MinusType/blob/master/image/批量1.png?raw=true" alt="" />
+<img src="https://github.com/Boycetoon/MinusType/blob/master/image/批量2.png?raw=true" alt="" />
+我这里使用了7级自然间断法的分级方式，但是需要注意在使用自然间断法之后点进“分类”里将方法调为手动，因为如果依然保持自然间断法的分类方式应用到其他的图层上后将不会保持相同的间断点。确认之后可以保存并关闭mxd。</p>
+
+<p>然后使用arcpy来将标准图层的符号系统应用到其他的图层上，我使用的是第三方的编辑器而不是内部的脚本编辑器。</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">arcpy</span>
+
+<span class="n">mxd</span> <span class="o">=</span> <span class="n">arcpy</span><span class="p">.</span><span class="n">mapping</span><span class="p">.</span><span class="n">MapDocument</span><span class="p">(</span><span class="s">"."</span><span class="p">)</span> <span class="c1">#导入mxd文件
+</span><span class="n">originLayerName</span> <span class="o">=</span> <span class="s">"name1.tif"</span> <span class="c1">#输入作为标准的图层名
+</span><span class="n">originLayer</span> <span class="o">=</span> <span class="n">arcpy</span><span class="p">.</span><span class="n">mapping</span><span class="p">.</span><span class="n">ListLayers</span><span class="p">(</span><span class="n">mxd</span><span class="p">,</span> <span class="n">originLayerName</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">layers</span> <span class="o">=</span> <span class="n">arcpy</span><span class="p">.</span><span class="n">mapping</span><span class="p">.</span><span class="n">ListLayers</span><span class="p">(</span><span class="n">mxd</span><span class="p">,</span> <span class="n">name</span><span class="o">+</span><span class="s">"*"</span><span class="p">)</span> <span class="c1">#获取图层列表，后一个参数可以进行名称匹配,"*"代表通配
+</span><span class="k">for</span> <span class="n">lyr</span> <span class="ow">in</span> <span class="n">layers</span><span class="p">:</span>
+  <span class="k">if</span> <span class="n">lyr</span><span class="p">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">originLayer</span><span class="p">.</span><span class="n">name</span><span class="p">:</span> 
+      <span class="k">continue</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">originLayer</span><span class="p">.</span><span class="n">isFeatureLayer</span> <span class="ow">and</span> <span class="n">lyr</span><span class="p">.</span><span class="n">isFeatureLayer</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">originLayer</span><span class="p">.</span><span class="n">isRasterLayer</span> <span class="ow">and</span> <span class="n">lyr</span><span class="p">.</span><span class="n">isRasterLayer</span><span class="p">):</span>
+      <span class="n">arcpy</span><span class="p">.</span><span class="n">ApplySymbologyFromLayer_management</span><span class="p">(</span><span class="n">in_layer</span><span class="o">=</span><span class="n">lyr</span><span class="p">,</span> <span class="n">in_symbology_layer</span><span class="o">=</span><span class="n">originLayer</span><span class="p">)</span>
+<span class="n">mxd</span><span class="p">.</span><span class="n">save</span><span class="p">()</span>
+</code></pre></div></div>
+<p>结束后打开mxd文件看一下，发现所有的图层都已经给定了相同的符号系统。
+<img src="image/批量3.png" alt="" /></p>
+<h1 id="批量导出">批量导出</h1>
+<p>调整完符号系统需要进行批量导出，这个工作依然可以使用arcpy完成。当然需要先在ArcMap中做好几步前期准备，因为编程中的逻辑是打开一张图层，导出一张图，然后关掉这个图层。如果有底图之类的图层需要默认打开的状态，并且把所有预备导出的要素图层保持关闭状态（如果有图层组需要保持打开）。其次需要实现调好导出的视图。</p>
+
+<p><img src="image/批量4.png" alt="" />
+都准备好之后即可关闭mxd进行导出。</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">arcpy</span>
+
+<span class="n">mxd</span> <span class="o">=</span> <span class="n">arcpy</span><span class="p">.</span><span class="n">mapping</span><span class="p">.</span><span class="n">MapDocument</span><span class="p">(</span><span class="s">"."</span><span class="p">)</span> <span class="c1">#导入mxd文件
+</span><span class="n">path</span> <span class="o">=</span> <span class="s">'./path'</span> <span class="c1">#图片导出的路径
+</span><span class="n">layerlist</span> <span class="o">=</span> <span class="n">arcpy</span><span class="p">.</span><span class="n">mapping</span><span class="p">.</span><span class="n">ListLayers</span><span class="p">(</span><span class="n">mxd</span><span class="p">,</span> <span class="s">"*"</span><span class="o">+</span><span class="s">'.tif'</span><span class="p">)</span> <span class="c1">#获取需要导出的图层列表
+</span><span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">layerlist</span><span class="p">:</span>
+  <span class="n">layername</span> <span class="o">=</span> <span class="n">layer</span><span class="p">.</span><span class="n">name</span>
+  <span class="n">outpath</span> <span class="o">=</span> <span class="n">path</span><span class="o">+</span> <span class="s">'/'</span> <span class="o">+</span><span class="n">layername</span> <span class="o">+</span> <span class="s">".jpg"</span>
+  <span class="n">layer</span><span class="p">.</span><span class="n">visible</span> <span class="o">=</span> <span class="bp">True</span>
+  <span class="n">arcpy</span><span class="p">.</span><span class="n">mapping</span><span class="p">.</span><span class="n">ExportToJPEG</span><span class="p">(</span><span class="n">mxd</span><span class="p">,</span> <span class="n">outpath</span><span class="p">,</span> <span class="n">resolution</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+  <span class="n">layer</span><span class="p">.</span><span class="n">visible</span> <span class="o">=</span> <span class="bp">False</span>
+</code></pre></div></div>
+:ET

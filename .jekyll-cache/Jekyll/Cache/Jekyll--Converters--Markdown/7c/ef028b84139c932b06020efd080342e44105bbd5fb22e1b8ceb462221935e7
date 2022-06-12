@@ -1,0 +1,107 @@
+I"1]<h2 id="部分依赖图-partial-dependence-plot">部分依赖图 Partial Dependence Plot</h2>
+
+<p>如今机器学习算法在各个领域被广泛应用，对于一些领域的科研来说，机器学习提供了更精确估计的可能，但是其弱解释性却成为了更深入研究的阻力。可解释机器学习就是在机器学习模型的基础上通过一系列方法使得模型结果具备可解释的特性，部分依赖图（Partial Dependence Plot）显示了一个或两个特征对机器学习模型的预测结果的边际效应，由于很多机器学习算法非参数的特性使得部份依赖图可以揭示线性以及非线性特征，容易理解并且有较高的解释力。</p>
+
+<p>部分依赖图简易并且直观，在科学研究中被经常使用，但同时它也具有一些问题：</p>
+
+<ol>
+  <li>自变量间可能存在复杂的交互关系导致最终的结果，所以单看一个变量的pdp图可能是不全面的，然而由于人们对图形理解力的局限性，pdp图最多只支持双变量的交互而无法进行更高维的交互，当然这个缺陷的主要来源是人们的主观理解能力有限。</li>
+  <li>一些pdp图不显示特征分布，这可能会产生误导，因为可能会过度解释几乎没有数据的区域。</li>
+  <li>pdp假设其计算部分依赖的特征与其他特征不相关（在不进行交互的情况下），这可能会导致结果的误差，一个解决办法是使用条件而不是边际分布的累积局部效应图。（https://christophm.github.io/interpretable-ml-book/pdp.html）</li>
+  <li>由于pdp绘制的是平均响应，个体间的异质性可能无法被观察到，即有可能个体间的变化差异明显，这可以通过个体条件期望（Individual Conditional Expectation，ICE）曲线观察到。</li>
+  <li>取决于算法的精度以及难以避免的过拟合，pdp图可能存在许多较小的波动或变化趋势，而一般进行解释性研究时更加关注的是整体的变化趋势而不是局部变化。
+    <h2 id="sklearn的pdp方法">sklearn的pdp方法</h2>
+  </li>
+</ol>
+
+<p>Python中重要的机器学习包sklearn在最近的更新中加入了pdp图的绘制方法，官方案例见：<a href="https://scikit-learn.org/stable/modules/partial_dependence.html?highlight=pdp">https://scikit-learn.org/stable/modules/partial_dependence.html?highlight=pdp</a>
+<img src="https://github.com/Boycetoon/MinusType/blob/master/image/sphx_glr_plot_partial_dependence_002.png?raw=true" alt="" />
+<img src="image/sphx_glr_plot_partial_dependence_0031.png" alt="" />
+可以看到自带的绘图方法可以绘制单变量以及双变量交互的PDP图，并且还可以绘制ICE图，并且绘制的图形中包括了轴须图。不过根据上述的问题来看，sklearn提供的绘图方法轴须图太过稀疏，对样本分布的表征并不理想；其次缺少对曲线进行平滑拟合的表达。</p>
+<h2 id="pdp图绘制改进">pdp图绘制改进</h2>
+
+<p>基于以上的一些需求，我们可以自行绘制自己想要的pdp图，主要的思路就是使用sklearn的partial_dependence方法直接获取pd的值数组（<a href="https://scikit-learn.org/stable/modules/generated/sklearn.inspection.partial_dependence.html?highlight=partialdependence">https://scikit-learn.org/stable/modules/generated/sklearn.inspection.partial_dependence.html?highlight=partialdependence</a>），然后使用其他的绘图包进行绘制。</p>
+
+<p>下面是两种实践的代码，第一种包括了原曲线和拟合的样条曲线，并且使用了更密的轴须图，第二种在第一种的基础上增加了所有样本ICE的95%置信区间，这样可以看出样本间变化的异质性。不过需要注意的是这个置信区间是抽样估计的，与统计方法中参数估计的置信区间的意义是不同的。另外有一个小的细节是调用partial_dependence的时候如果不传入method参数则会自动使用‘recursion’方法，在一些模型中会导致pdp图的y轴是以0为基准值而不是以均值为基准值，而如果使用‘brute’方法则不会出现这种情况，但是会消耗更多的计算时间。</p>
+<h3 id="带拟合曲线与特征分布的pdp图">带拟合曲线与特征分布的pdp图</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">seaborn</span> <span class="k">as</span> <span class="n">sns</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="kn">from</span> <span class="nn">sklearn.inspection</span> <span class="kn">import</span> <span class="n">partial_dependence</span> <span class="c1"># 直接获取pdp数组的方法
+</span><span class="kn">from</span> <span class="nn">scipy.interpolate</span> <span class="kn">import</span> <span class="n">splev</span><span class="p">,</span> <span class="n">splrep</span> <span class="c1"># 数据平滑插值
+</span>
+<span class="n">features</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">importance</span><span class="p">.</span><span class="n">index</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">features</span><span class="p">:</span>
+  <span class="n">sns</span><span class="p">.</span><span class="n">set_theme</span><span class="p">(</span><span class="n">style</span><span class="o">=</span><span class="s">"ticks"</span><span class="p">,</span> <span class="n">palette</span><span class="o">=</span><span class="s">"deep"</span><span class="p">,</span> <span class="n">font_scale</span> <span class="o">=</span> <span class="mf">1.3</span><span class="p">)</span>
+  <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+  <span class="n">ax</span>  <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">)</span>
+
+  <span class="n">pdp</span> <span class="o">=</span> <span class="n">partial_dependence</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="p">[</span><span class="n">i</span><span class="p">],</span> 
+                           <span class="n">kind</span><span class="o">=</span><span class="s">"average"</span><span class="p">,</span> 
+                           <span class="n">method</span> <span class="o">=</span> <span class="s">'brute'</span><span class="p">,</span> 
+                           <span class="n">grid_resolution</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span> <span class="c1"># 获取pdp的数组
+</span>  <span class="n">plot_x</span> <span class="o">=</span> <span class="n">pdp</span><span class="p">[</span><span class="s">'values'</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="c1"># 提取值作为x轴
+</span>  <span class="n">plot_y</span> <span class="o">=</span> <span class="n">pdp</span><span class="p">[</span><span class="s">'average'</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="c1"># 提取平均pdp作为y轴数据
+</span>  <span class="n">tck</span> <span class="o">=</span> <span class="n">splrep</span><span class="p">(</span><span class="n">plot_x</span><span class="p">,</span> <span class="n">plot_y</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span> <span class="c1"># 进行数据平滑，参考：https://docs.scipy.org/doc/scipy/reference/tutorial/interpolate.html?highlight=interpolate
+</span>  <span class="n">xnew</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">plot_x</span><span class="p">.</span><span class="nb">min</span><span class="p">(),</span><span class="n">plot_x</span><span class="p">.</span><span class="nb">max</span><span class="p">(),</span><span class="mi">300</span><span class="p">)</span>
+  <span class="n">ynew</span> <span class="o">=</span> <span class="n">splev</span><span class="p">(</span><span class="n">xnew</span><span class="p">,</span> <span class="n">tck</span><span class="p">,</span> <span class="n">der</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+  <span class="n">plt</span><span class="p">.</span><span class="n">plot</span><span class="p">(</span><span class="n">plot_x</span><span class="p">,</span> <span class="n">plot_y</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s">'k'</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.4</span><span class="p">)</span> <span class="c1"># 绘制原曲线
+</span>  <span class="n">plt</span><span class="p">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xnew</span><span class="p">,</span> <span class="n">ynew</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span> <span class="c1"># 绘制平滑曲线
+</span>  <span class="n">sns</span><span class="p">.</span><span class="n">rugplot</span><span class="p">(</span><span class="n">data</span> <span class="o">=</span> <span class="n">dummy_df</span><span class="p">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">100</span><span class="p">),</span> <span class="n">x</span> <span class="o">=</span> <span class="n">i</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="p">.</span><span class="mi">06</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s">'k'</span><span class="p">,</span> <span class="n">alpha</span> <span class="o">=</span> <span class="mf">0.3</span><span class="p">)</span> <span class="c1"># 使用sns绘制轴须图
+</span>
+  <span class="n">x_min</span> <span class="o">=</span> <span class="n">plot_x</span><span class="p">.</span><span class="nb">min</span><span class="p">()</span><span class="o">-</span><span class="p">(</span><span class="n">plot_x</span><span class="p">.</span><span class="nb">max</span><span class="p">()</span><span class="o">-</span><span class="n">plot_x</span><span class="p">.</span><span class="nb">min</span><span class="p">())</span><span class="o">*</span><span class="mf">0.1</span> <span class="c1"># 定义x轴的下限
+</span>  <span class="n">x_max</span> <span class="o">=</span> <span class="n">plot_x</span><span class="p">.</span><span class="nb">max</span><span class="p">()</span><span class="o">+</span><span class="p">(</span><span class="n">plot_x</span><span class="p">.</span><span class="nb">max</span><span class="p">()</span><span class="o">-</span><span class="n">plot_x</span><span class="p">.</span><span class="nb">min</span><span class="p">())</span><span class="o">*</span><span class="mf">0.1</span> <span class="c1"># 定义X轴的上限
+</span>  <span class="n">plt</span><span class="p">.</span><span class="n">title</span><span class="p">(</span><span class="s">'Partial Dependence Plot of '</span><span class="o">+</span><span class="n">i</span> <span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
+  <span class="n">plt</span><span class="p">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">'Partial Dependence'</span><span class="p">)</span>
+  <span class="n">plt</span><span class="p">.</span><span class="n">xlim</span><span class="p">(</span><span class="n">x_min</span><span class="p">,</span><span class="n">x_max</span><span class="p">)</span> <span class="c1"># 定义X轴的上下限，为了防止轴须图中的离散值改变了坐标轴定位
+</span>  <span class="n">plt</span><span class="p">.</span><span class="n">savefig</span><span class="p">(</span><span class="s">'./pdpplot_'</span><span class="o">+</span><span class="n">i</span><span class="o">+</span><span class="s">'.jpg'</span><span class="p">)</span>
+  <span class="n">plt</span><span class="p">.</span><span class="n">show</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p><strong>绘制结果如下：</strong>
+<img src="image/pdpplot_bta_800.jpg" alt="" /></p>
+<h3 id="带ice置信区间的pdp图">带ICE置信区间的pdp图</h3>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">seaborn</span> <span class="k">as</span> <span class="n">sns</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="kn">from</span> <span class="nn">sklearn.inspection</span> <span class="kn">import</span> <span class="n">partial_dependence</span> <span class="c1"># 直接获取pdp数组的方法
+</span><span class="kn">from</span> <span class="nn">scipy.interpolate</span> <span class="kn">import</span> <span class="n">splev</span><span class="p">,</span> <span class="n">splrep</span> <span class="c1"># 数据平滑插值
+</span>
+<span class="n">features</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">importance</span><span class="p">.</span><span class="n">index</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">features</span><span class="p">:</span>
+  <span class="n">pdp</span> <span class="o">=</span> <span class="n">partial_dependence</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">kind</span><span class="o">=</span><span class="s">"both"</span><span class="p">,</span> <span class="n">grid_resolution</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span> <span class="c1"># 这里采用了both方法，除了pdp均值外会计算出每个样本的ice
+</span>  <span class="n">sns</span><span class="p">.</span><span class="n">set_theme</span><span class="p">(</span><span class="n">style</span><span class="o">=</span><span class="s">"ticks"</span><span class="p">,</span> <span class="n">palette</span><span class="o">=</span><span class="s">"deep"</span><span class="p">,</span> <span class="n">font_scale</span> <span class="o">=</span> <span class="mf">1.1</span><span class="p">)</span>
+  <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+  <span class="n">ax</span>  <span class="o">=</span> <span class="n">plt</span><span class="p">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">)</span>
+
+  <span class="n">plot_x</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="n">Series</span><span class="p">(</span><span class="n">pdp</span><span class="p">[</span><span class="s">'values'</span><span class="p">][</span><span class="mi">0</span><span class="p">]).</span><span class="n">rename</span><span class="p">(</span><span class="s">'x'</span><span class="p">)</span>
+  <span class="n">plot_i</span> <span class="o">=</span> <span class="n">pdp</span><span class="p">[</span><span class="s">'individual'</span><span class="p">]</span> <span class="c1">#获取每个样本的ice数组
+</span>  <span class="n">plot_y</span> <span class="o">=</span> <span class="n">pdp</span><span class="p">[</span><span class="s">'average'</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+  <span class="n">tck</span> <span class="o">=</span> <span class="n">splrep</span><span class="p">(</span><span class="n">plot_x</span><span class="p">,</span> <span class="n">plot_y</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
+  <span class="n">xnew</span> <span class="o">=</span> <span class="n">np</span><span class="p">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">plot_x</span><span class="p">.</span><span class="nb">min</span><span class="p">(),</span><span class="n">plot_x</span><span class="p">.</span><span class="nb">max</span><span class="p">(),</span><span class="mi">300</span><span class="p">)</span>
+  <span class="n">ynew</span> <span class="o">=</span> <span class="n">splev</span><span class="p">(</span><span class="n">xnew</span><span class="p">,</span> <span class="n">tck</span><span class="p">,</span> <span class="n">der</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+  <span class="n">plot_df</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s">'x'</span><span class="p">,</span><span class="s">'y'</span><span class="p">])</span> <span class="c1"># 定义一个新df，包括x y两列
+</span>  <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">plot_i</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span> <span class="c1"># 遍历每个样本的ice
+</span>      <span class="n">a2</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="n">Series</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+      <span class="n">df_i</span> <span class="o">=</span> <span class="n">pd</span><span class="p">.</span><span class="n">concat</span><span class="p">([</span><span class="n">plot_x</span><span class="p">,</span> <span class="n">a2</span><span class="p">.</span><span class="n">rename</span><span class="p">(</span><span class="s">'y'</span><span class="p">)],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="c1"># 将ice与x横向拼接
+</span>      <span class="n">plot_df</span> <span class="o">=</span> <span class="n">plot_df</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="n">df_i</span><span class="p">)</span> <span class="c1"># 加入到总表中
+</span>
+  <span class="n">sns</span><span class="p">.</span><span class="n">lineplot</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">plot_df</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="s">"x"</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s">"y"</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s">'k'</span><span class="p">,</span> <span class="n">linewidth</span> <span class="o">=</span> <span class="mf">1.5</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s">'--'</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">)</span> <span class="c1"># 使用sns绘制线图，如果同一个x上有多个y的话将会自动生成95%置信区间
+</span>  <span class="n">plt</span><span class="p">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xnew</span><span class="p">,</span> <span class="n">ynew</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>  
+  <span class="n">sns</span><span class="p">.</span><span class="n">rugplot</span><span class="p">(</span><span class="n">data</span> <span class="o">=</span> <span class="n">dummy_df</span><span class="p">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">100</span><span class="p">),</span> <span class="n">x</span> <span class="o">=</span> <span class="n">i</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="p">.</span><span class="mi">05</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s">'k'</span><span class="p">,</span> <span class="n">alpha</span> <span class="o">=</span> <span class="mf">0.3</span><span class="p">)</span>
+
+  <span class="n">x_min</span> <span class="o">=</span> <span class="n">plot_x</span><span class="p">.</span><span class="nb">min</span><span class="p">()</span><span class="o">-</span><span class="p">(</span><span class="n">plot_x</span><span class="p">.</span><span class="nb">max</span><span class="p">()</span><span class="o">-</span><span class="n">plot_x</span><span class="p">.</span><span class="nb">min</span><span class="p">())</span><span class="o">*</span><span class="mf">0.1</span>
+  <span class="n">x_max</span> <span class="o">=</span> <span class="n">plot_x</span><span class="p">.</span><span class="nb">max</span><span class="p">()</span><span class="o">+</span><span class="p">(</span><span class="n">plot_x</span><span class="p">.</span><span class="nb">max</span><span class="p">()</span><span class="o">-</span><span class="n">plot_x</span><span class="p">.</span><span class="nb">min</span><span class="p">())</span><span class="o">*</span><span class="mf">0.1</span>
+  <span class="n">plt</span><span class="p">.</span><span class="n">title</span><span class="p">(</span><span class="s">'Partial Dependence Plot of '</span><span class="o">+</span><span class="n">i</span> <span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
+  <span class="n">plt</span><span class="p">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">'Partial Dependence'</span><span class="p">)</span>
+  <span class="n">plt</span><span class="p">.</span><span class="n">xlabel</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+  <span class="n">plt</span><span class="p">.</span><span class="n">xlim</span><span class="p">(</span><span class="n">x_min</span><span class="p">,</span><span class="n">x_max</span><span class="p">)</span>
+  <span class="n">plt</span><span class="p">.</span><span class="n">savefig</span><span class="p">(</span><span class="s">'./pdpplot_'</span><span class="o">+</span><span class="n">i</span><span class="o">+</span><span class="s">'.jpg'</span><span class="p">)</span>
+  <span class="n">plt</span><span class="p">.</span><span class="n">show</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p><strong>绘制结果如下：</strong>
+<img src="image/pdpplot_bta_800-1623041867417.jpg" alt="" /></p>
+:ET
