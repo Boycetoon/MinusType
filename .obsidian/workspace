@@ -9,7 +9,7 @@
         "state": {
           "type": "markdown",
           "state": {
-            "file": "_posts/2022-06-13-更舒适的播客回顾流程.md",
+            "file": "_posts/2022-06-20-CityEnginey-形状语法与生成式城市设计.md",
             "mode": "source",
             "source": false
           }
@@ -53,7 +53,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 300,
+    "collapsed": true
   },
   "right": {
     "id": "8a45a0a0ddcb214f",
@@ -69,7 +70,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "_posts/2022-06-13-更舒适的播客回顾流程.md",
+                "file": "_posts/2022-06-20-CityEnginey-形状语法与生成式城市设计.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -89,15 +90,15 @@
   },
   "active": "99df9eab3e535094",
   "lastOpenFiles": [
+    "_posts/2022-06-20-CityEnginey-形状语法与生成式城市设计.md",
     "_posts/2022-06-13-更舒适的播客回顾流程.md",
     "_posts/2022-06-12-城市设计指标监看工具.md",
+    "_posts/2021-10-16-对问题意识的思考.md",
     "_posts/2022-06-12-数字辅助城市设计的初步框架.md",
     "_posts/2022-06-12-自动生成路网工具.md",
     "_posts/2021-10-21-ArcGIS中的建成环境指标汇总计算.md",
     "_posts/2022-06-04-对于科研中理论创新的若干看法.md",
     "_posts/2022-06-08-播客补完计划-4.md",
-    "_posts/2020-08-11-微观社会调查数据：中国家庭追踪调查CFPS.md",
-    "_posts/2021-05-08-通过百度地图路径规划获取出行距离与时间.md",
-    "_posts/2021-10-12-ArcGIS中的批量应用符号系统与导出.md"
+    "_posts/2020-08-11-微观社会调查数据：中国家庭追踪调查CFPS.md"
   ]
 }
