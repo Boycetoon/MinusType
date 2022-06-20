@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "CityEnginey，形状语法与生成式城市设计"
+title: "CityEngine，形状语法与生成式城市设计"
 categories:
   - 可以攻玉
 tags:
