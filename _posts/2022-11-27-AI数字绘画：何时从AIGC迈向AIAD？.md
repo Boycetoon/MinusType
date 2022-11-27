@@ -33,15 +33,18 @@ tags:
 我并不想在文中过多地涉及技术细节，因为我希望探讨的是更一般的情况而不是某个具体的模型与参数的性能。所以把自己在尝试过程中的技术相关的内容写在这里。
 
 首先我大多数情况下使用的模型都是部署在colab上的stable diffusion模型，早期的时候使用的是没有GUI版本的，最近使用的都是带GUI的版本，相对来说更为易用。如果有尝试的意向可以参考以下的内容：
-	- 1. [AI数字绘画 stable-diffusion 保姆级教程](https://mp.weixin.qq.com/s?__biz=MzkyOTIxMDAzNw==&mid=2247492892&idx=1&sn=c69e4d2782098efc644b151dbd2049d5&chksm=c20faec6f57827d0442f5697b1a5a31ee15933956e45302411ecbee3b8708c5b218bd8e1d4e9&scene=21&token=1095602716&lang=zh_CN#wechat_redirect)
-	- 2. [Best & Easiest Way to Run Stable Diffusion for Free (WebUI)](https://bytexd.com/best-way-to-run-stable-diffusion-for-free/)
-	- 3. [fast-stable-diffusion Github](https://github.com/TheLastBen/fast-stable-diffusion)
+ 1. [AI数字绘画 stable-diffusion 保姆级教程](https://mp.weixin.qq.com/s?__biz=MzkyOTIxMDAzNw==&mid=2247492892&idx=1&sn=c69e4d2782098efc644b151dbd2049d5&chksm=c20faec6f57827d0442f5697b1a5a31ee15933956e45302411ecbee3b8708c5b218bd8e1d4e9&scene=21&token=1095602716&lang=zh_CN#wechat_redirect)
+ 2. [Best & Easiest Way to Run Stable Diffusion for Free (WebUI)](https://bytexd.com/best-way-to-run-stable-diffusion-for-free/)
+ 3. [fast-stable-diffusion Github](https://github.com/TheLastBen/fast-stable-diffusion)
 
 接下来简单地说一下为什么采用stable diffusion。
-	- 最主要的原因是它完全免费，配合colab的话甚至不用消耗自己的算力，相对来说同期的Midjourney，NovelAI等都是有限额或需要付费的。
-	- 其次尽管部署难度相对其他打开即用的平台更高一点，但若作为生产力工具评估的话这点学习成本完全不算什么，并且是一次部署长期使用。
-	- 第三尽管不同的模型有着各种优势，在我测试的当口相对来说大家可能都更推崇Midjourney的质量，但根据我的考察其质量的优势还是体现在少量图片生成时的创意程度似乎更高，在不进行反复调试的情况下生成的图片更加符合我们的需要，但这个特点在生产环节的重要性被缩小了，在现在这个阶段我们并不期望AI能为我们直接生成作品（因为环境设计也并不是以图像作为成品提交方式的），我更看重在快速迭代和修改中呈现出的创意和可使用的意象，在这个需求中自己部署的模型采用批量训练的方法一次训练几十上百张图片可能是会更常用的方式。
-	
+
+最主要的原因是它完全免费，配合colab的话甚至不用消耗自己的算力，相对来说同期的Midjourney，NovelAI等都是有限额或需要付费的。
+
+其次尽管部署难度相对其他打开即用的平台更高一点，但若作为生产力工具评估的话这点学习成本完全不算什么，并且是一次部署长期使用。
+
+第三尽管不同的模型有着各种优势，在我测试的当口相对来说大家可能都更推崇Midjourney的质量，但根据我的考察其质量的优势还是体现在少量图片生成时的创意程度似乎更高，在不进行反复调试的情况下生成的图片更加符合我们的需要，但这个特点在生产环节的重要性被缩小了，在现在这个阶段我们并不期望AI能为我们直接生成作品（因为环境设计也并不是以图像作为成品提交方式的），我更看重在快速迭代和修改中呈现出的创意和可使用的意象，在这个需求中自己部署的模型采用批量训练的方法一次训练几十上百张图片可能是会更常用的方式。
+
 # 当下的AI能如何帮助我们做设计？
 
 ## 单纯的text2img效果怎么样，能做效果图吗
@@ -51,21 +54,21 @@ tags:
 由于这样的特征，文本生成最适合用来寻找灵感，输入一些较为模糊的意向和要素进行大批量的生成，然后在其中挑选一些尚可的结果作为设计或表现的参考。其实这样的方式在其他的设计领域如婚礼设计、服装设计等已经有所应用，只是相对来说环境设计对真实性的要求更高。
 
 那么AI现在能生成什么样的图片呢？其实如果去[Lexica](https://lexica.art/)这样的网站上就可以看到已经有相当多跟城市相关的优质作品，只不过由于大多数和CG艺术相关并不是非常写实：
-![](image/AI数字绘画/1..jpg)
+![](https://github.com/Boycetoon/MinusType/blob/master/image/AI%E6%95%B0%E5%AD%97%E7%BB%98%E7%94%BB/1..jpg?raw=true)
 
 其中有的图像质感已经相当不错，比如参照Lexica上的案例生成的未来城市的一组图片：
-![](image/AI数字绘画/2..jpg)
+![](https://github.com/Boycetoon/MinusType/blob/master/image/AI%E6%95%B0%E5%AD%97%E7%BB%98%E7%94%BB/2..jpg?raw=true)
 **prompt:**  Futuristic glasgow with buildings and skyscraper, green square, multi-layerd trees, Air platform and bridges sunny day, volumetric light, reflections, hyperdetailed, artstation, cgsociety, 8 k
 
 其实在我刚开始尝试AI绘图的时候网络上已经有建筑或景观设计师尝试生成了更加真实的图像：
 
-![](image/AI数字绘画/3.jpg)
+![](https://github.com/Boycetoon/MinusType/blob/master/image/AI%E6%95%B0%E5%AD%97%E7%BB%98%E7%94%BB/3.jpg?raw=true)
 
 从上面生成的结果已经可以看出在真实感上现阶段的AI已经表现得相当不错，整体图像粗略来看不太容易看出违和之处，尽管如果放大细看还是能找出不少瑕疵。但是这种【基本不违和】的能力对于生成看起来真实的图像十分重要，这代表了需要有基本正确的空间关系、光照和阴影等，尽管这些细节仔细看来仍然是【不正确的】，但是毕竟大多数人也不会用画法几何的眼光来审视所有的图像。也就是这种【基本不违和】的能力让AI绘画有了更多的可能性。
 
 为了试验AI在更复杂场景生成的可能性和创意能力，我继续尝试了以滨水城市为主题的批量生成：
 
-![](image/AI数字绘画/4.jpg)
+![](https://github.com/Boycetoon/MinusType/blob/master/image/AI%E6%95%B0%E5%AD%97%E7%BB%98%E7%94%BB/4.jpg?raw=true)
  **prompt:**  a beautiful rendering of city near by river,  low-rise buildings with roof garden and multi-story platforms, high-rise skyscrapers crowded in center,  built by wood and metal and other modern materials, designed by SOM and MVRDV , amazing parks  in front of fiver, clear sky with sunlight,  8k, octane render, architecture photography, hyper detailed,  epic lighting
  
 可以看到由文字批量生成的图片构图的多样性十分丰富，尽管整体风格还是相似，但是却能生成各种类型的场景，说明文字的详细描述对于图像的约束力有限，同时生成的这种随机性能为方案早期的创意阶段带来一些新的可能。反过来说，由于生成的图像太不一致，没法将这些图看作是一套方案，也就是说每张图都有其随机性，之间是没有关联的，由于这样的特性让AI生成无法满足方案及之后过程的工作需要，毕竟要是每张图都是不同的样子，那本身就是对设计的消解。
@@ -76,22 +79,22 @@ tags:
 
 当了解这个功能的基本运行过程后，作为设计师的一个想要尝试的就是：是否可以输入一张手绘的方案草图或者建模软件中的体块模型让AI帮助我们深化方案？
 
-![](image/AI数字绘画/5..jpg)
-![](image/AI数字绘画/6..png)
+![](https://github.com/Boycetoon/MinusType/blob/master/image/AI%E6%95%B0%E5%AD%97%E7%BB%98%E7%94%BB/5..jpg?raw=true)
+![](https://github.com/Boycetoon/MinusType/blob/master/image/AI%E6%95%B0%E5%AD%97%E7%BB%98%E7%94%BB/6..png?raw=true)
 *以上两张图中第一张都为原图*
  
 我尝试了将比较简单的体块模型和分析图作为输入来生成，虽然确实能得到一些意料之外的结果，但是这些结果似乎比较难和生产环境中的具体需求结合起来。可以发现AI并没有生成逼真的效果图，而是生成了类似分析渲染图的样式，这似乎是由于AI对于输入图片的学习是均等的。我们都能理解一张图片由色彩要素（颜色、材质、阴影、光照）和形态要素（形态结构、空间关系）组成，我们其实原本希望AI着重学习草图中的大体形态关系，而对具体的材质、景别、微观样式等进行深化。然而不如我们所愿，扩散算法对图像的学习似乎是不区分颜色和结构的， 所以当我们想要它学习形态结构（也就是方案）的时候它往往会对颜色过度学习而对形态学习不足，结果就好像它在帮我们出方案而不是做效果图。
 
 考虑到输入图像的特点，这似乎告诉我们对输入的图像有更高的要求：如上面所说，最好能在颜色和结构两个方面都对AI做出指引。一开始想到的是手绘草图的形式确定色彩和结构，但现于个人绘画水平没有进行更多的尝试，另一个问题是涂色的草图容易被AI学习出更接近卡通或者绘画的风格。所以后来我想到的是在一个白模底稿的基础上迁移另一个图片的颜色来达到合成的效果，然后以迭代的形式多次训练图像以控制生成的方向。
 
-![](image/AI数字绘画/7..png)
+![](https://github.com/Boycetoon/MinusType/blob/master/image/AI%E6%95%B0%E5%AD%97%E7%BB%98%E7%94%BB/7..png?raw=true)
 **prompt:** a beautiful 3D rendering of waterside  port city,  low-rise buildings with roof garden and multi-story platforms, built by wood and metal and other modern materials, designed by SOM and MVRDV , amazing parks  in front of fiver, Villa residential area, clear sky with sunlight,  8k, octane render, architecture photography, hyper detailed,  epic lighting
  
 最终确实生成了看似效果图的图像，但是其另外一个缺陷缺依然明显，那就是输入图像的影响控制是全局的，但是往往我们希望它深化的只是其中一部分。比如上图中我希望它对于码头重点建筑可以有多样的变化，但周边的环境最好尽量不要在形态和布局上有太大的变化。这就要求模型能允许我们对图像的各个区域分别设置学习的强度。
 
 所幸现在的模型中已经提供了一个相近的功能，允许对输入的图像进行蒙版绘制，然后单独控制蒙版部分的强度。Midjourney已经支持了绘制的时候直接通过不同透明度的方式来控制学习的强度，但由于这个控制可能需要反复试验我暂时没有进行更深入的使用。不过使用这个功能也能实现一些设计过程中一些常用的需求，比如说建筑方案比选：
 
-![](image/AI数字绘画/8..png)
+![](https://github.com/Boycetoon/MinusType/blob/master/image/AI%E6%95%B0%E5%AD%97%E7%BB%98%E7%94%BB/8..png?raw=true)
 
 在这个例子中蒙版内生成的内容能较好地符合周边环境特征，当然如玻璃反射等的效果还是相当不足，不过也说明了上面提到的流程的可能性。早在stable diffusion刚刚开源的时候网上就出现了对应的ps插件，能根据ps中的蒙版、基础图像和文字描述来生成局部的结果，然后将多个局部拼合在一起成为完整的作品（[https://www.youtube.com/watch?v=dD9vpO2zaJw](https://www.youtube.com/watch?v=dD9vpO2zaJw)）。我认为要是希望AI能在正式的生产环境中起到作用这样的流程是值得推广的。
 
@@ -100,14 +103,14 @@ tags:
 
 这里以一个步行街道的效果图作为例子：
 
-![](image/AI数字绘画/9..png)
+![](https://github.com/Boycetoon/MinusType/blob/master/image/AI%E6%95%B0%E5%AD%97%E7%BB%98%E7%94%BB/9..png?raw=true)
 **prompt:** Bustling and fashionable commercial street with transportation of the future, green plants, parks with people activate, clear sky and sunlight, volumetric light, reflections, hyperdetailed, artstation,8 k, octane render
 
 可以看到当输入的图像本身的质量较高时输出的图像也相当不错，并且在整体构图和景别和原图接近的基础上衍生出了足够的变化。这种方式能解决两个问题：其一是没找到十分贴切的意象图，则可以用一张构图相近的效果图来尝试生成需要的意象图；其二是如果找到想用的意象图存在版权等问题，为了避免陷入侵权的麻烦可以用AI生成一张接近原图的意象图。
 
 更进一步地，可以把前面加工原图的思路用上，如果不是特别满意原图的景别，可以在原图的基础上进行适当的颜色调整再作为输入。AI的【基本不违和】能力能帮助你把调色调得十分离谱的图像变成一眼看不出毛病的真实效果。这里我用一张水边的商业街作为例子，在对原图进行调色、涂抹增加要素、通过反相改为夜景的调整之后分别输入生成不同景别的意象图。
 
-![](image/AI数字绘画/10..png)
+![](https://github.com/Boycetoon/MinusType/blob/master/image/AI%E6%95%B0%E5%AD%97%E7%BB%98%E7%94%BB/10..png?raw=true)
 **prompt:** Bustling and fashionable commercial street near by river, low rise buildings in front of water,  wood and other warm modern materials,  high-rise buildings with glass rearwards， green plants, parks with people activate,  shops, clear sky and sunlight, volumetric light, reflections, hyperdetailed, artstation,8 k, octane render, 3d rendering
 
 ## 小结一下
