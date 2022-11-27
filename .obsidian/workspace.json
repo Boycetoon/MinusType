@@ -1,0 +1,124 @@
+{
+  "main": {
+    "id": "214011f74e454c8c",
+    "type": "split",
+    "children": [
+      {
+        "id": "24c5fef72562d638",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "99df9eab3e535094",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "_posts/2022-06-20-CityEngine-形状语法与生成式城市设计.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
+            "id": "b7a07dbd9c838157",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "_posts/2022-11-27-AI数字绘画：何时从AIGC迈向AIAD？.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          }
+        ],
+        "currentTab": 1
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "2c88485cb8867999",
+    "type": "split",
+    "children": [
+      {
+        "id": "7f04b2bec65b5b07",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "538281a1f960b834",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical"
+              }
+            }
+          },
+          {
+            "id": "343d6cd1c3223e67",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "tag:#数据分析爱好者",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "8a45a0a0ddcb214f",
+    "type": "split",
+    "children": [
+      {
+        "id": "1e7fa810f39cbde1",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "200b7cb4915ad097",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "_posts/2022-11-27-AI数字绘画：何时从AIGC迈向AIAD？.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "active": "b7a07dbd9c838157",
+  "lastOpenFiles": [
+    "_posts/2022-06-20-CityEngine-形状语法与生成式城市设计.md",
+    "_posts/2022-11-27-AI数字绘画：何时从AIGC迈向AIAD？.md",
+    "_posts/2022-06-13-更舒适的播客回顾流程.md",
+    "_posts/2022-06-12-城市设计指标监看工具.md",
+    "_posts/2021-10-16-对问题意识的思考.md",
+    "_posts/2022-06-12-数字辅助城市设计的初步框架.md",
+    "_posts/2022-06-12-自动生成路网工具.md",
+    "_posts/2021-10-21-ArcGIS中的建成环境指标汇总计算.md",
+    "_posts/2022-06-04-对于科研中理论创新的若干看法.md",
+    "_posts/2022-06-08-播客补完计划-4.md"
+  ]
+}
